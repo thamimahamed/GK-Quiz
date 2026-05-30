@@ -1,0 +1,128 @@
+
+<h2 class="sr-only">GK Quiz — 20 general knowledge questions with instant scoring</h2>
+<style>
+  .quiz-wrap { max-width: 560px; margin: 1.5rem auto; }
+  .q-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .q-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .q-title { font-size: 16px; font-weight: 500; }
+  .q-badge { font-size: 12px; color: var(--color-text-secondary); background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 4px 10px; }
+  .q-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+  .q-row:last-child { border-bottom: none; }
+  .q-num { font-size: 13px; color: var(--color-text-secondary); min-width: 24px; }
+  .q-text { font-size: 14px; flex: 1; }
+  .q-input { width: 160px; font-size: 13px; }
+  .q-icon { font-size: 18px; min-width: 20px; }
+  .btn-submit { width: 100%; padding: 10px; background: var(--color-text-primary); color: var(--color-background-primary); border: none; border-radius: var(--border-radius-md); font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 0.5rem; }
+  .btn-submit:hover { opacity: 0.85; }
+  .btn-retry { width: 100%; padding: 10px; background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); font-size: 14px; cursor: pointer; margin-top: 0.75rem; color: var(--color-text-primary); }
+  .btn-retry:hover { background: var(--color-background-secondary); }
+  .score-card { text-align: center; padding: 1.5rem 1rem; }
+  .score-num { font-size: 48px; font-weight: 500; }
+  .score-label { font-size: 14px; color: var(--color-text-secondary); margin-top: 4px; }
+  .score-msg { font-size: 15px; margin-top: 12px; }
+  .progress-bar { height: 6px; background: var(--color-background-secondary); border-radius: 99px; margin: 1rem 0; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; background: var(--color-text-primary); transition: width 0.5s ease; }
+  .answer-tag { font-size: 12px; padding: 2px 8px; border-radius: var(--border-radius-md); }
+  .tag-correct { background: var(--color-background-success); color: var(--color-text-success); }
+  .tag-wrong { background: var(--color-background-danger); color: var(--color-text-danger); font-size: 12px; }
+</style>
+
+<div class="quiz-wrap">
+  <div class="q-card" id="quiz-form">
+    <div class="q-header">
+      <div class="q-title">GK Quiz</div>
+      <div class="q-badge">20 questions</div>
+    </div>
+    <div id="questions-list"></div>
+    <button class="btn-submit" onclick="submitQuiz()">Submit answers</button>
+  </div>
+
+  <div class="q-card" id="result-card" style="display:none">
+    <div class="score-card">
+      <div class="score-num" id="score-num">0/20</div>
+      <div class="score-label">your score</div>
+      <div class="progress-bar"><div class="progress-fill" id="score-bar" style="width:0%"></div></div>
+      <div class="score-msg" id="score-msg"></div>
+    </div>
+    <div id="review-list"></div>
+    <button class="btn-retry" onclick="retryQuiz()"><i class="ti ti-refresh" aria-hidden="true"></i> Try again</button>
+  </div>
+</div>
+
+<script>
+const qs = [
+  { q: "What is the only mammal that can truly fly?", a: "bat" },
+  { q: "Which planet has the shortest day?", a: "jupiter" },
+  { q: "What is the largest organ in the human body?", a: "skin" },
+  { q: "Which animal's fingerprints are almost identical to humans'?", a: "koala" },
+  { q: "How many hearts does an octopus have? (in words)", a: "three" },
+  { q: "What is the hottest planet in the Solar System?", a: "venus" },
+  { q: "Which metal is liquid at room temperature?", a: "mercury" },
+  { q: "What is the only letter not found in any U.S. state name?", a: "q" },
+  { q: "Which bird can fly backward?", a: "hummingbird" },
+  { q: "What is the strongest muscle in the human body?", a: "jaw" },
+  { q: "Which country has the most time zones?", a: "france" },
+  { q: "What color is the Sun actually?", a: "white" },
+  { q: "How many bones does a shark have? (in words)", a: "zero" },
+  { q: "What is the tallest grass in the world?", a: "bamboo" },
+  { q: "Which bird lays the largest egg?", a: "ostrich" },
+  { q: "What is the largest desert in the world?", a: "antarctica" },
+  { q: "Which planet rotates on its side?", a: "uranus" },
+  { q: "What is the only continent with no active volcanoes?", a: "australia" },
+  { q: "Which animal can sleep for up to 3 years?", a: "snail" },
+  { q: "What is the rarest blood group?", a: "ab negative" }
+];
+
+function buildQuiz() {
+  const list = document.getElementById('questions-list');
+  list.innerHTML = qs.map((q, i) => `
+    <div class="q-row">
+      <span class="q-num">${i+1}.</span>
+      <span class="q-text">${q.q}</span>
+      <input class="q-input" type="text" id="ans-${i}" placeholder="Your answer" autocomplete="off" />
+    </div>
+  `).join('');
+}
+
+function submitQuiz() {
+  let score = 0;
+  const review = qs.map((q, i) => {
+    const val = (document.getElementById('ans-'+i).value || '').trim().toLowerCase();
+    const correct = val === q.a;
+    if (correct) score++;
+    return { q: q.q, given: val, answer: q.a, correct };
+  });
+
+  document.getElementById('quiz-form').style.display = 'none';
+  document.getElementById('result-card').style.display = 'block';
+  document.getElementById('score-num').textContent = score + '/20';
+  document.getElementById('score-bar').style.width = Math.round(score/20*100) + '%';
+
+  const msgs = [
+    [0,4,'Keep practising — every question is a new lesson!'],
+    [5,9,'Good start — you know more than you think!'],
+    [10,14,'Solid effort — well done!'],
+    [15,18,'Excellent! You\'re a GK champ.'],
+    [19,20,'Perfect score! Outstanding!']
+  ];
+  document.getElementById('score-msg').textContent = msgs.find(([lo,hi]) => score>=lo && score<=hi)[2];
+
+  document.getElementById('review-list').innerHTML = review.map((r, i) => `
+    <div class="q-row">
+      <span class="q-num">${i+1}.</span>
+      <span class="q-text" style="font-size:13px">${r.q}</span>
+      <span class="answer-tag ${r.correct ? 'tag-correct' : 'tag-wrong'}">
+        ${r.correct ? '<i class="ti ti-check" aria-hidden="true"></i> ' + r.answer : '<i class="ti ti-x" aria-hidden="true"></i> ' + (r.given || '—') + ' · ' + r.answer}
+      </span>
+    </div>
+  `).join('');
+}
+
+function retryQuiz() {
+  document.getElementById('result-card').style.display = 'none';
+  document.getElementById('quiz-form').style.display = 'block';
+  buildQuiz();
+}
+
+buildQuiz();
+</script>
